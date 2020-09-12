@@ -99,10 +99,12 @@ const chartOptions = {
 
 
 function App() {
-  const { register, control, handleSubmit, errors } = useForm<FormData>()
+  const { control, handleSubmit, errors } = useForm<FormData>()
+
   const [result, setResult] = useState([] as Result[]);
 
   const onSubmit = (formData: FormData) => {
+    if (errors && Object.keys(errors).length) console.error(errors)
 
     const 厚生年金保険料 = formData.income * 厚生年金保険料率 / 2
     const 健康保険料 = formData.income * 健康保険料率 / 2
@@ -144,6 +146,7 @@ function App() {
       {group: '', label: '税金等合計', value: 税金等合計, ratio: 税金等合計 / formData.income},
     ])
 
+    console.log('社会保険料事業主負担', 社会保険料事業主負担)
   };
 
   return (
