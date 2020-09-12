@@ -222,6 +222,11 @@ function App() {
 
         <div className="flex m-2">
           <label className="w-full block text-sm font-bold mb-2">年間貯蓄金額</label>
+          {
+            // TODO: 住宅購入した場合は消費税になる。
+            // TODO: 他に消費税にならないものはある？医療費、保険料、学校教育
+            // https://www.nta.go.jp/m/taxanswer/6201.htm
+          }
           <Controller
             name="savings"
             control={control}
