@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import NumberFormat from "react-number-format";
+import NumberFormat, { NumberFormatValues } from "react-number-format";
 
 import './App.css';
 import { Doughnut } from 'react-chartjs-2';
@@ -28,7 +28,7 @@ const エンゲル係数 = 0.25
 // https://www.nta.go.jp/m/taxanswer/1410.htm
 const 給与所得控除計算 = (income: number) => {
   if (income <= 1625000) {
-    return 550000
+    return Math.min(income, 550000)
   }
   if (income <= 1800000) {
     return income * 0.4 - 100000
@@ -67,7 +67,12 @@ const 所得税計算 = (taxable: number) => {
   }
   return taxable * 0.45 - 4796000
 }
-const nf = new Intl.NumberFormat('ja-JP', {})
+const numberFormat = new Intl.NumberFormat('ja-JP', {})
+const percentageFormat = new Intl.NumberFormat("en-US", {
+  style: 'percent',
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1
+});
 
 type Result = {group: string, label: string, value: number, ratio: number}
 const toChartData = (data: Result[]) => {
@@ -99,18 +104,24 @@ const chartOptions = {
 
 
 function App() {
-  const { control, handleSubmit, errors } = useForm<FormData>()
+  const { control, handleSubmit, errors, setValue, getValues } = useForm<FormData>({
+    defaultValues: {
+      income: 5000000,
+      rent: 1000000,
+      savings: 500000
+    }
+  })
 
   const [result, setResult] = useState([] as Result[]);
 
   const onSubmit = (formData: FormData) => {
-    if (errors && Object.keys(errors).length) console.error(errors)
+    console.debug(formData)
 
-    const 厚生年金保険料 = formData.income * 厚生年金保険料率 / 2
-    const 健康保険料 = formData.income * 健康保険料率 / 2
-    const 雇用保険料_労働者負担 = formData.income * 雇用保険料率_労働者負担 / 2
-    const 雇用保険料_事業主負担 = formData.income * 雇用保険料率_事業主負担 / 2
-    const 労災保険料_事業主負担 = formData.income * 労災保険料率 / 2
+    const 厚生年金保険料 = Math.floor(formData.income * 厚生年金保険料率 / 2)
+    const 健康保険料 = Math.floor(formData.income * 健康保険料率 / 2)
+    const 雇用保険料_労働者負担 = Math.floor(formData.income * 雇用保険料率_労働者負担 / 2)
+    const 雇用保険料_事業主負担 = Math.floor(formData.income * 雇用保険料率_事業主負担 / 2)
+    const 労災保険料_事業主負担 = Math.floor(formData.income * 労災保険料率 / 2)
 
     const 社会保険料控除 = 厚生年金保険料 + 健康保険料 + 雇用保険料_労働者負担
     const 社会保険料事業主負担 = 厚生年金保険料 + 健康保険料 + 雇用保険料_事業主負担 + 労災保険料_事業主負担
@@ -119,8 +130,8 @@ function App() {
     const 生命保険料控除 = 120000
     const 扶養控除 = 380000
 
-    const 控除額合計 = 社会保険料控除 + 生命保険料控除 + 扶養控除 + 基礎控除額
-    const 課税所得金額 = Math.floor((給与所得 - 控除額合計) / 1000) * 1000
+    const 控除額合計 =社会保険料控除 + 生命保険料控除 + 扶養控除 + 基礎控除額
+    const 課税所得金額 = Math.floor(Math.max(0, 給与所得 - 控除額合計) / 1000) * 1000
     const 所得税 = 所得税計算(課税所得金額)
     const 復興特別所得税 = 所得税 * 0.021
     const 所得税年税額 = Math.floor((所得税 + 復興特別所得税) / 100) * 100
@@ -152,15 +163,28 @@ function App() {
   return (
     <div className="App w-full max-w-md container mx-auto p-4 m-4 text-gray-700">
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-        <h1 className="text-xl mb-4">税金等支払い額を計算する</h1>
+        <h1 className="text-xl mb-4">税金等の支払い額を計算する</h1>
         <div className="flex m-2 align-bottom">
           <label className="w-1/2 block text-sm font-bold mb-2">年間収入<br />（給与・賞与）</label>
           <Controller
-            className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight text-right focus:outline-none focus:shadow-outline"
             name="income"
             control={control}
-            defaultValue={5000000}
-            as={<NumberFormat thousandSeparator={true} />}
+            render={() => (
+              <NumberFormat
+                className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight text-right focus:outline-none focus:shadow-outline"
+                thousandSeparator={true}
+                defaultValue={5000000}
+                onValueChange={(values: NumberFormatValues) => {
+                  setValue('income', values.floatValue)
+                }}
+              />
+            )}
+            rules={{
+              min: {
+                value: 1,
+                message: "1以上にしてください"
+              }
+            }}
           />
           <span className="m-1">円</span>
         </div>
@@ -168,11 +192,27 @@ function App() {
         <div className="flex m-2">
           <label className="w-1/2 block text-sm font-bold mb-2">年間支払家賃</label>
           <Controller
-            className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight text-right focus:outline-none focus:shadow-outline"
             name="rent"
             control={control}
-            defaultValue={1000000}
-            as={<NumberFormat thousandSeparator={true} />}
+            render={() => (
+              <NumberFormat
+                className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight text-right focus:outline-none focus:shadow-outline"
+                thousandSeparator={true}
+                defaultValue={1000000}
+                onValueChange={(values: NumberFormatValues) => {
+                  setValue('rent', values.floatValue)
+                }}
+              />
+            )}
+            rules={{
+              min: {
+                value: 0,
+                message: "0以上にしてください"
+              },
+              validate: () => {
+                return getValues('income') >= getValues('rent') + getValues('savings')
+              }
+            }}
           />
           <span className="m-1">円</span>
         </div>
@@ -180,12 +220,28 @@ function App() {
         <div className="flex m-2">
           <label className="w-1/2 block text-sm font-bold mb-2">年間貯蓄金額</label>
           <Controller
-            className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight text-right focus:outline-none focus:shadow-outline"
             name="savings"
             control={control}
-            defaultValue={500000}
-            as={<NumberFormat thousandSeparator={true} />}
-          />
+            render={() => (
+              <NumberFormat
+                className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight text-right focus:outline-none focus:shadow-outline"
+                thousandSeparator={true}
+                defaultValue={500000}
+                onValueChange={(values: NumberFormatValues) => {
+                  setValue('savings', values.floatValue)
+                }}
+              />
+            )}
+            rules={{
+              min: {
+                value: 0,
+                message: "0以上にしてください"
+              },
+              validate: () => {
+                return getValues('income') >= getValues('rent') + getValues('savings')
+              }
+            }}
+          />          
           <span className="m-1">円</span>
         </div>
 
@@ -194,28 +250,37 @@ function App() {
             計算
           </button>
         </div>
+
+        { 
+          (errors.income || errors.rent || errors.savings) &&
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 mt-2 rounded relative" role="alert">
+            <strong className="font-bold">数値が変です</strong>
+          </div>
+        }
+
       </form>
 
       <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <Doughnut
+            data={toChartData(result.filter(d => d.group === '支出'))}
+            options={chartOptions}
+            height={400}
+            />
+
         <table className="w-full text-left">
           <tbody>
             {
               result.map((item) => (
                 <tr key={ item.label }>
                   <th>{ item.label }</th>
-                  <td className="text-right">{ nf.format(item.value) }</td>
-                  <td className="text-right">{ Math.floor(item.ratio * 100) }%</td>
+                  <td className="text-right">{ numberFormat.format(item.value) }</td>
+                  <td className="text-right">{ percentageFormat.format(item.ratio)}</td>
                 </tr>
               ))
             }
           </tbody>
         </table>
 
-        <Doughnut
-          data={toChartData(result.filter(d => d.group === '支出'))}
-          options={chartOptions}
-          height={400}
-          />
       </div>
     </div>
   );
