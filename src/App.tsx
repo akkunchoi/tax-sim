@@ -161,11 +161,11 @@ function App() {
   };
 
   return (
-    <div className="App w-full max-w-md container mx-auto p-4 m-4 text-gray-700">
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-        <h1 className="text-xl mb-4">税金等の支払い額を計算する</h1>
+    <div className="App w-full max-w-md container mx-auto p-2 m-4 text-gray-700">
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-white shadow-md rounded px-3 pt-6 pb-8 mb-4">
+        <h1 className="text-xl mb-4">税金等の支払い額をざっくり計算</h1>
         <div className="flex m-2 align-bottom">
-          <label className="w-1/2 block text-sm font-bold mb-2">年間収入<br />（給与・賞与）</label>
+          <label className="w-full block text-sm font-bold mb-2">年間収入<br />（給与・賞与）</label>
           <Controller
             name="income"
             control={control}
@@ -190,7 +190,7 @@ function App() {
         </div>
 
         <div className="flex m-2">
-          <label className="w-1/2 block text-sm font-bold mb-2">年間支払家賃</label>
+          <label className="w-full block text-sm font-bold mb-2">年間支払家賃</label>
           <Controller
             name="rent"
             control={control}
@@ -218,7 +218,7 @@ function App() {
         </div>
 
         <div className="flex m-2">
-          <label className="w-1/2 block text-sm font-bold mb-2">年間貯蓄金額</label>
+          <label className="w-full block text-sm font-bold mb-2">年間貯蓄金額</label>
           <Controller
             name="savings"
             control={control}
