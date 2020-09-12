@@ -40,7 +40,7 @@ const 給与所得控除計算 = (income: number) => {
     return income * 0.2 + 440000
   }
   if (income <= 8500000) {
-    return income * 0.1 - 1100000
+    return income * 0.1 + 1100000
   }
   return 1950000
 }
@@ -127,7 +127,9 @@ function App() {
     const 社会保険料事業主負担 = 厚生年金保険料 + 健康保険料 + 雇用保険料_事業主負担 + 労災保険料_事業主負担
     const 給与所得控除 = 給与所得控除計算(formData.income)
     const 給与所得 = formData.income - 給与所得控除
+    // TODO
     const 生命保険料控除 = 120000
+    // TODO
     const 扶養控除 = 380000
 
     const 控除額合計 =社会保険料控除 + 生命保険料控除 + 扶養控除 + 基礎控除額
@@ -135,6 +137,7 @@ function App() {
     const 所得税 = 所得税計算(課税所得金額)
     const 復興特別所得税 = 所得税 * 0.021
     const 所得税年税額 = Math.floor((所得税 + 復興特別所得税) / 100) * 100
+    // TODO
     const 住民税 = 課税所得金額 * 0.1
 
     const 税金 = 所得税 + 住民税 + 社会保険料控除
