@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
+import NumberFormat from "react-number-format";
+
 import './App.css';
 import { Doughnut } from 'react-chartjs-2';
 import 'chartjs-plugin-colorschemes';
@@ -97,7 +99,7 @@ const chartOptions = {
 
 
 function App() {
-  const { register, handleSubmit, errors } = useForm<FormData>()
+  const { register, control, handleSubmit, errors } = useForm<FormData>()
   const [result, setResult] = useState([] as Result[]);
 
   const onSubmit = (formData: FormData) => {
@@ -145,34 +147,43 @@ function App() {
   };
 
   return (
-    <div className="App w-full max-w-md container mx-auto p-4 m-4">
+    <div className="App w-full max-w-md container mx-auto p-4 m-4 text-gray-700">
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-        <h1>どれぐらい税金等を支払っているか計算する</h1>
-        <div className="flex m-2">
-          <label className="w-1/2 block text-gray-700 text-sm font-bold mb-2">年間収入<br />（給与・賞与）</label>
-          <input name="income"
-            className="w-1/2 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            type="number"
-            defaultValue="5000000"
-            ref={register({ required: true })}></input>
+        <h1 className="text-xl mb-4">税金等支払い額を計算する</h1>
+        <div className="flex m-2 align-bottom">
+          <label className="w-1/2 block text-sm font-bold mb-2">年間収入<br />（給与・賞与）</label>
+          <Controller
+            className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight text-right focus:outline-none focus:shadow-outline"
+            name="income"
+            control={control}
+            defaultValue={5000000}
+            as={<NumberFormat thousandSeparator={true} />}
+          />
+          <span className="m-1">円</span>
         </div>
 
         <div className="flex m-2">
-          <label className="w-1/2 block text-gray-700 text-sm font-bold mb-2">年間支払家賃</label>
-          <input name= "rent"
-            className="w-1/2 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            type="number"
-            defaultValue="1000000"
-            ref={register({ required: true })}></input>
+          <label className="w-1/2 block text-sm font-bold mb-2">年間支払家賃</label>
+          <Controller
+            className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight text-right focus:outline-none focus:shadow-outline"
+            name="rent"
+            control={control}
+            defaultValue={1000000}
+            as={<NumberFormat thousandSeparator={true} />}
+          />
+          <span className="m-1">円</span>
         </div>
 
         <div className="flex m-2">
-          <label className="w-1/2 block text-gray-700 text-sm font-bold mb-2">年間貯蓄額</label>
-          <input name="savings"
-            className="w-1/2 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            type="number"
-            defaultValue="500000"
-            ref={register({ required: true })}></input>
+          <label className="w-1/2 block text-sm font-bold mb-2">年間貯蓄金額</label>
+          <Controller
+            className="shadow appearance-none border rounded w-full py-2 px-3 leading-tight text-right focus:outline-none focus:shadow-outline"
+            name="savings"
+            control={control}
+            defaultValue={500000}
+            as={<NumberFormat thousandSeparator={true} />}
+          />
+          <span className="m-1">円</span>
         </div>
 
         <div className="text-center">
