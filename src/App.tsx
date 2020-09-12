@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import './App.css';
+import { Doughnut } from 'react-chartjs-2';
+import 'chartjs-plugin-colorschemes';
 
 type FormData = {
   income: number
@@ -65,9 +67,39 @@ const 所得税計算 = (taxable: number) => {
 }
 const nf = new Intl.NumberFormat('ja-JP', {})
 
+type Result = {group: string, label: string, value: number, ratio: number}
+const toChartData = (data: Result[]) => {
+  return {
+    labels: data.map((d) => d.label),
+    datasets: [
+      {
+        data: data.map((d) => d.value),
+      }
+    ]
+  }
+}
+const customColorFunction = (schemeColors: string[]) => {
+  schemeColors[0] = '#EEE';
+  schemeColors[1] = '#DDD';
+  schemeColors[2] = '#CCC';
+  // return schemeColors.slice(0, 6)
+  // console.log(schemeColors)
+}
+
+const chartOptions = {
+  plugins: {
+    colorschemes: {
+        scheme: 'brewer.Paired12',
+        custom: customColorFunction
+    }
+  }
+}
+
+
 function App() {
   const { register, handleSubmit, errors } = useForm<FormData>()
-  const [result, setResult] = useState([] as {group: string, label: string, value: number, ratio: number}[]);
+  const [result, setResult] = useState([] as Result[]);
+
   const onSubmit = (formData: FormData) => {
 
     const 厚生年金保険料 = formData.income * 厚生年金保険料率 / 2
@@ -95,74 +127,82 @@ function App() {
       
     const 軽減税率考慮した消費税率 = エンゲル係数 * 0.08 + (1-エンゲル係数) * 0.1
     const 消費税を除いた消費額 = Math.floor(推定消費額 / (1 + 軽減税率考慮した消費税率))
-    const 推定消費税額 = 推定消費額 - 消費税を除いた消費額 
-    const 税金等合計 = 推定消費税額 + 税金
+    const 消費税 = 推定消費額 - 消費税を除いた消費額 
+    const 税金等合計 = 消費税 + 税金
 
     setResult([
-      {group: '収入', label: '収入', value: formData.income, ratio: formData.income / formData.income},
+      {group: '', label: '収入', value: formData.income, ratio: formData.income / formData.income},
       {group: '支出', label: '家賃', value: formData.rent, ratio: formData.rent / formData.income},
       {group: '支出', label: '貯蓄額', value: formData.savings, ratio: formData.savings / formData.income},
       {group: '支出', label: '推定消費金額', value: 消費税を除いた消費額, ratio: 消費税を除いた消費額 / formData.income},
-      {group: '税金等', label: '社会保険料', value: 社会保険料控除, ratio: 社会保険料控除 / formData.income},
-      {group: '税金等', label: '所得税', value: 所得税年税額, ratio: 所得税年税額 / formData.income},
-      {group: '税金等', label: '住民税', value: 住民税, ratio: 住民税 / formData.income},
-      {group: '税金等', label: '推定消費税額', value: 推定消費税額, ratio: 推定消費税額 / formData.income},
-      {group: '税金等', label: '税金等合計', value: 税金等合計, ratio: 税金等合計 / formData.income},
+      {group: '支出', label: '社会保険料', value: 社会保険料控除, ratio: 社会保険料控除 / formData.income},
+      {group: '支出', label: '所得税', value: 所得税年税額, ratio: 所得税年税額 / formData.income},
+      {group: '支出', label: '住民税', value: 住民税, ratio: 住民税 / formData.income},
+      {group: '支出', label: '消費税', value: 消費税, ratio: 消費税 / formData.income},
+      {group: '', label: '税金等合計', value: 税金等合計, ratio: 税金等合計 / formData.income},
     ])
+
   };
 
   return (
     <div className="App w-full max-w-md container mx-auto p-4 m-4">
-        <form onSubmit={handleSubmit(onSubmit)} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-          <div className="flex m-2">
-            <label className="w-1/2 block text-gray-700 text-sm font-bold mb-2">年間収入<br />（給与・賞与）</label>
-            <input name="income"
-              className="w-1/2 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              type="number"
-              defaultValue="5000000"
-              ref={register({ required: true })}></input>
-          </div>
-
-          <div className="flex m-2">
-            <label className="w-1/2 block text-gray-700 text-sm font-bold mb-2">年間支払家賃</label>
-            <input name= "rent"
-              className="w-1/2 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              type="number"
-              defaultValue="1000000"
-              ref={register({ required: true })}></input>
-          </div>
-
-          <div className="flex m-2">
-            <label className="w-1/2 block text-gray-700 text-sm font-bold mb-2">年間貯蓄額</label>
-            <input name="savings"
-              className="w-1/2 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              type="number"
-              defaultValue="500000"
-              ref={register({ required: true })}></input>
-          </div>
-
-          <div className="text-center">
-            <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" type="submit">
-              計算
-            </button>
-          </div>
-        </form>
-
-        <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-          <table className="w-full text-left">
-            <tbody>
-              {
-                result.map((item) => (
-                  <tr key={ item.label }>
-                    <th>{ item.label }</th>
-                    <td className="text-right">{ nf.format(item.value) }</td>
-                    <td className="text-right">{ Math.floor(item.ratio * 100) }%</td>
-                  </tr>
-                ))
-              }
-            </tbody>
-          </table>
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <h1>どれぐらい税金等を支払っているか計算する</h1>
+        <div className="flex m-2">
+          <label className="w-1/2 block text-gray-700 text-sm font-bold mb-2">年間収入<br />（給与・賞与）</label>
+          <input name="income"
+            className="w-1/2 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            type="number"
+            defaultValue="5000000"
+            ref={register({ required: true })}></input>
         </div>
+
+        <div className="flex m-2">
+          <label className="w-1/2 block text-gray-700 text-sm font-bold mb-2">年間支払家賃</label>
+          <input name= "rent"
+            className="w-1/2 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            type="number"
+            defaultValue="1000000"
+            ref={register({ required: true })}></input>
+        </div>
+
+        <div className="flex m-2">
+          <label className="w-1/2 block text-gray-700 text-sm font-bold mb-2">年間貯蓄額</label>
+          <input name="savings"
+            className="w-1/2 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            type="number"
+            defaultValue="500000"
+            ref={register({ required: true })}></input>
+        </div>
+
+        <div className="text-center">
+          <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" type="submit">
+            計算
+          </button>
+        </div>
+      </form>
+
+      <div className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <table className="w-full text-left">
+          <tbody>
+            {
+              result.map((item) => (
+                <tr key={ item.label }>
+                  <th>{ item.label }</th>
+                  <td className="text-right">{ nf.format(item.value) }</td>
+                  <td className="text-right">{ Math.floor(item.ratio * 100) }%</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+
+        <Doughnut
+          data={toChartData(result.filter(d => d.group === '支出'))}
+          options={chartOptions}
+          height={400}
+          />
+      </div>
     </div>
   );
 }
